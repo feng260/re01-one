@@ -29,6 +29,7 @@ class ScrapeService {
     const specs = ['128GB', '256GB', '512GB', '1TB', '8GB+128GB', '12GB+256GB', '16GB+512GB'];
     const colors = ['黑色', '白色', '蓝色', '绿色', '紫色', '金色', '银色', '粉色'];
     const jdShops = ['京东自营', '京东官方旗舰店', '京东数码专营店', '京东家电专卖店', '京东手机旗舰店'];
+    const jdSuffixes = ['Pro', 'Plus', 'Max', 'Ultra', '标准版', '旗舰版', '尊享版'];
     
     return Array.from({ length: limit }, (_, i) => {
       const brand = brands[Math.floor(Math.random() * brands.length)];
@@ -36,6 +37,7 @@ class ScrapeService {
       const spec = specs[Math.floor(Math.random() * specs.length)];
       const color = colors[Math.floor(Math.random() * colors.length)];
       const shop = jdShops[Math.floor(Math.random() * jdShops.length)];
+      const suffix = jdSuffixes[Math.floor(Math.random() * jdSuffixes.length)];
       
       // 根据品牌和型号设置价格区间
       let price = 0;
@@ -50,15 +52,23 @@ class ScrapeService {
       const sales = Math.floor(Math.random() * 8000) + 2000; // 2000-10000
       const rating = (Math.random() * 0.3 + 4.7).toFixed(1); // 4.7-5.0
       
+      // 构建商品名称，结合用户输入的关键词
+      let productName = '';
+      if (Math.random() > 0.3) {
+        productName = `${keyword} ${brand} ${model} ${suffix} ${spec} ${color}`;
+      } else {
+        productName = `${brand} ${model} ${suffix} ${keyword} ${spec} ${color}`;
+      }
+      
       return {
         id: `jd-${Date.now()}-${i}`,
-        name: `${brand} ${model} ${spec} ${color} - ${shop}`,
+        name: `${productName} - ${shop}`,
         price: price,
         sales: sales,
         rating: rating,
         platform: '京东',
         url: `https://item.jd.com/${10000000000 + i}.html`,
-        image: `https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=${encodeURIComponent(brand + ' ' + model + ' smartphone')}&image_size=square`,
+        image: `https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=${encodeURIComponent(keyword + ' product')}&image_size=square`,
         shopName: shop,
         scrapedAt: new Date().toISOString()
       };
@@ -73,6 +83,7 @@ class ScrapeService {
     const colors = ['黑色', '白色', '蓝色', '绿色', '紫色'];
     const taobaoShops = ['官方旗舰店', '品牌专卖店', '授权经销商', '海外直供', '特惠店'];
     const taobaoTags = ['正品保障', '假一赔十', '七天无理由', '现货速发', '包邮', '赠运费险', '分期免息'];
+    const taobaoSuffixes = ['新品上市', '热销爆款', '限量特惠', '年度旗舰', '明星同款'];
     
     return Array.from({ length: limit }, (_, i) => {
       const brand = brands[Math.floor(Math.random() * brands.length)];
@@ -81,6 +92,7 @@ class ScrapeService {
       const color = colors[Math.floor(Math.random() * colors.length)];
       const shop = taobaoShops[Math.floor(Math.random() * taobaoShops.length)];
       const tag = taobaoTags[Math.floor(Math.random() * taobaoTags.length)];
+      const suffix = taobaoSuffixes[Math.floor(Math.random() * taobaoSuffixes.length)];
       
       // 根据品牌和型号设置价格区间
       let price = 0;
@@ -95,15 +107,26 @@ class ScrapeService {
       const sales = Math.floor(Math.random() * 15000) + 1000; // 1000-16000
       const rating = (Math.random() * 0.4 + 4.6).toFixed(1); // 4.6-5.0
       
+      // 构建商品名称，结合用户输入的关键词
+      let productName = '';
+      const random = Math.random();
+      if (random > 0.6) {
+        productName = `${keyword} ${brand} ${model} ${suffix} ${spec} ${color} ${tag}`;
+      } else if (random > 0.3) {
+        productName = `${brand} ${model} ${keyword} ${suffix} ${spec} ${color} ${tag}`;
+      } else {
+        productName = `${brand} ${model} ${suffix} ${spec} ${color} ${keyword} ${tag}`;
+      }
+      
       return {
         id: `taobao-${Date.now()}-${i}`,
-        name: `${brand} ${model} ${spec} ${color} ${tag} - ${shop}`,
+        name: `${productName} - ${shop}`,
         price: price,
         sales: sales,
         rating: rating,
         platform: '淘宝',
         url: `https://item.taobao.com/item.htm?id=${10000000000 + i}`,
-        image: `https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=${encodeURIComponent(brand + ' ' + model + ' smartphone')}&image_size=square`,
+        image: `https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=${encodeURIComponent(keyword + ' product')}&image_size=square`,
         shopName: `${brand}${shop}`,
         scrapedAt: new Date().toISOString()
       };
@@ -118,6 +141,7 @@ class ScrapeService {
     const colors = ['黑色', '白色', '蓝色', '绿色', '红色', '黄色'];
     const pddShops = ['百亿补贴', '拼团优惠', '工厂直销', '源头好货', '性价比之选'];
     const pddTags = ['拼团价', '秒杀价', '特惠价', '限时折扣', '满减优惠', '新人专享', '百亿补贴'];
+    const pddSuffixes = ['超值推荐', '性价比之王', '爆款热卖', '限时秒杀', '今日特惠'];
     
     return Array.from({ length: limit }, (_, i) => {
       const brand = brands[Math.floor(Math.random() * brands.length)];
@@ -126,6 +150,7 @@ class ScrapeService {
       const color = colors[Math.floor(Math.random() * colors.length)];
       const shop = pddShops[Math.floor(Math.random() * pddShops.length)];
       const tag = pddTags[Math.floor(Math.random() * pddTags.length)];
+      const suffix = pddSuffixes[Math.floor(Math.random() * pddSuffixes.length)];
       
       // 拼多多价格相对较低
       let price = 0;
@@ -138,15 +163,26 @@ class ScrapeService {
       const sales = Math.floor(Math.random() * 30000) + 5000; // 5000-35000
       const rating = (Math.random() * 0.5 + 4.5).toFixed(1); // 4.5-5.0
       
+      // 构建商品名称，结合用户输入的关键词
+      let productName = '';
+      const random = Math.random();
+      if (random > 0.6) {
+        productName = `${keyword} ${brand} ${model} ${suffix} ${spec} ${color} ${tag}`;
+      } else if (random > 0.3) {
+        productName = `${brand} ${model} ${keyword} ${suffix} ${spec} ${color} ${tag}`;
+      } else {
+        productName = `${brand} ${model} ${suffix} ${spec} ${color} ${keyword} ${tag}`;
+      }
+      
       return {
         id: `pdd-${Date.now()}-${i}`,
-        name: `${brand} ${model} ${spec} ${color} ${tag} - ${shop}`,
+        name: `${productName} - ${shop}`,
         price: price,
         sales: sales,
         rating: rating,
         platform: '拼多多',
         url: `https://mobile.yangkeduo.com/goods.html?goods_id=${10000000000 + i}`,
-        image: `https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=${encodeURIComponent(brand + ' ' + model + ' smartphone')}&image_size=square`,
+        image: `https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=${encodeURIComponent(keyword + ' product')}&image_size=square`,
         shopName: `拼多多${shop}`,
         scrapedAt: new Date().toISOString()
       };
