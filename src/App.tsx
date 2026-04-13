@@ -216,10 +216,12 @@ const App: React.FC = () => {
               <input
                 type="number"
                 value={limit}
-                onChange={(e) => setLimit(Number(e.target.value))}
+                onChange={(e) => setLimit(Number(e.target.value) || 1)}
                 min="1"
                 max="20"
+                step="1"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-3 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                inputMode="numeric"
               />
             </div>
           </div>
