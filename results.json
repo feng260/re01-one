@@ -1,0 +1,110 @@
+[
+  {
+    "id": "pdd-1776052008924-0",
+    "name": "手机 拼多多版 1",
+    "price": 176,
+    "sales": 6152,
+    "rating": "4.8",
+    "platform": "拼多多",
+    "url": "https://mobile.yangkeduo.com/goods.html?goods_id=10000000000",
+    "image": "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=%E6%89%8B%E6%9C%BA%20product&image_size=square",
+    "shopName": "拼多多店铺 1",
+    "scrapedAt": "2026-04-13T03:46:48.924Z"
+  },
+  {
+    "id": "pdd-1776052008924-1",
+    "name": "手机 拼多多版 2",
+    "price": 210,
+    "sales": 7296,
+    "rating": "4.4",
+    "platform": "拼多多",
+    "url": "https://mobile.yangkeduo.com/goods.html?goods_id=10000000001",
+    "image": "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=%E6%89%8B%E6%9C%BA%20product&image_size=square",
+    "shopName": "拼多多店铺 2",
+    "scrapedAt": "2026-04-13T03:46:48.924Z"
+  },
+  {
+    "id": "jd-1776052008924-1",
+    "name": "手机 京东版 2",
+    "price": 281,
+    "sales": 6853,
+    "rating": "4.1",
+    "platform": "京东",
+    "url": "https://item.jd.com/10000000001.html",
+    "image": "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=%E6%89%8B%E6%9C%BA%20product&image_size=square",
+    "shopName": "京东自营店 2",
+    "scrapedAt": "2026-04-13T03:46:48.924Z"
+  },
+  {
+    "id": "pdd-1776052008924-2",
+    "name": "手机 拼多多版 3",
+    "price": 295,
+    "sales": 11204,
+    "rating": "4.0",
+    "platform": "拼多多",
+    "url": "https://mobile.yangkeduo.com/goods.html?goods_id=10000000002",
+    "image": "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=%E6%89%8B%E6%9C%BA%20product&image_size=square",
+    "shopName": "拼多多店铺 3",
+    "scrapedAt": "2026-04-13T03:46:48.924Z"
+  },
+  {
+    "id": "taobao-1776052008924-2",
+    "name": "手机 淘宝版 3",
+    "price": 455,
+    "sales": 1378,
+    "rating": "4.8",
+    "platform": "淘宝",
+    "url": "https://item.taobao.com/item.htm?id=10000000002",
+    "image": "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=%E6%89%8B%E6%9C%BA%20product&image_size=square",
+    "shopName": "淘宝店铺 3",
+    "scrapedAt": "2026-04-13T03:46:48.924Z"
+  },
+  {
+    "id": "jd-1776052008924-2",
+    "name": "手机 京东版 3",
+    "price": 503,
+    "sales": 7249,
+    "rating": "4.8",
+    "platform": "京东",
+    "url": "https://item.jd.com/10000000002.html",
+    "image": "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=%E6%89%8B%E6%9C%BA%20product&image_size=square",
+    "shopName": "京东自营店 3",
+    "scrapedAt": "2026-04-13T03:46:48.924Z"
+  },
+  {
+    "id": "taobao-1776052008924-1",
+    "name": "手机 淘宝版 2",
+    "price": 672,
+    "sales": 3149,
+    "rating": "4.6",
+    "platform": "淘宝",
+    "url": "https://item.taobao.com/item.htm?id=10000000001",
+    "image": "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=%E6%89%8B%E6%9C%BA%20product&image_size=square",
+    "shopName": "淘宝店铺 2",
+    "scrapedAt": "2026-04-13T03:46:48.924Z"
+  },
+  {
+    "id": "taobao-1776052008924-0",
+    "name": "手机 淘宝版 1",
+    "price": 795,
+    "sales": 4593,
+    "rating": "4.5",
+    "platform": "淘宝",
+    "url": "https://item.taobao.com/item.htm?id=10000000000",
+    "image": "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=%E6%89%8B%E6%9C%BA%20product&image_size=square",
+    "shopName": "淘宝店铺 1",
+    "scrapedAt": "2026-04-13T03:46:48.924Z"
+  },
+  {
+    "id": "jd-1776052008922-0",
+    "name": "手机 京东版 1",
+    "price": 822,
+    "sales": 7770,
+    "rating": "4.8",
+    "platform": "京东",
+    "url": "https://item.jd.com/10000000000.html",
+    "image": "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=%E6%89%8B%E6%9C%BA%20product&image_size=square",
+    "shopName": "京东自营店 1",
+    "scrapedAt": "2026-04-13T03:46:48.922Z"
+  }
+]
