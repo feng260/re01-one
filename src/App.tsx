@@ -46,6 +46,8 @@ const App: React.FC = () => {
         },
         body: JSON.stringify(request)
       });
+      
+      console.log('API Response:', response);
 
       const data = await response.json();
 
@@ -65,8 +67,11 @@ const App: React.FC = () => {
 
   const fetchResults = async () => {
     try {
-      const response = await fetch(`http://localhost:3001/api/results?keyword=${keyword}&sortBy=price`);
+      console.log('Fetching results for keyword:', keyword);
+      const response = await fetch(`http://localhost:3001/api/results?keyword=${encodeURIComponent(keyword)}&sortBy=price`);
+      console.log('Results API Response:', response);
       const data = await response.json();
+      console.log('Results API Data:', data);
 
       if (data.success) {
         setPriceTrend(data.visualization.priceTrend);
