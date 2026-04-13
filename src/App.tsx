@@ -39,7 +39,7 @@ const App: React.FC = () => {
         limit
       };
 
-      const response = await fetch('http://localhost:3001/api/scrape', {
+      const response = await fetch('/api/scrape', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -68,7 +68,7 @@ const App: React.FC = () => {
   const fetchResults = async () => {
     try {
       console.log('Fetching results for keyword:', keyword);
-      const response = await fetch(`http://localhost:3001/api/results?keyword=${encodeURIComponent(keyword)}&sortBy=price`);
+      const response = await fetch(`/api/results?keyword=${encodeURIComponent(keyword)}&sortBy=price`);
       console.log('Results API Response:', response);
       const data = await response.json();
       console.log('Results API Data:', data);
