@@ -243,6 +243,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     console.log('history数据:', stock.history);
                     console.log('history长度:', stock.history.length);
                     
+                    // 确保history数据不为空且包含数据
+                    if (!stock.history || stock.history.length === 0) {
+                        console.error('历史数据为空');
+                        stockInfo.innerHTML = '<div style="text-align: center; padding: 40px; color: red;">历史数据为空，无法绘制走势图</div>';
+                        return;
+                    }
+                    
                     // 处理K线数据
                     console.log('开始处理K线数据');
                     const dates = stock.history.map(item => item.date);
