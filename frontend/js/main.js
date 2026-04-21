@@ -214,41 +214,138 @@ document.addEventListener('DOMContentLoaded', function() {
                     </ul>
                 `;
                 
-                // 绘制价格走势图
-                const dates = stock.history.map(item => item.date);
-                const prices = stock.history.map(item => item.close);
+                // 处理K线数据
+                const klineData = stock.history.map(item => [
+                    item.date,
+                    item.open,
+                    item.close,
+                    item.low,
+                    item.high
+                ]);
                 
+                // 生成未来5天的预测数据（简单线性预测）
+                const futureData = [];
+                const lastDate = new Date(stock.history[stock.history.length - 1].date);
+                let lastClose = stock.history[stock.history.length - 1].close;
+                let lastOpen = stock.history[stock.history.length - 1].open;
+                let lastHigh = stock.history[stock.history.length - 1].high;
+                let lastLow = stock.history[stock.history.length - 1].low;
+                
+                // 计算平均涨幅
+                let totalChange = 0;
+                for (let i = 1; i < stock.history.length; i++) {
+                    totalChange += (stock.history[i].close - stock.history[i-1].close) / stock.history[i-1].close;
+                }
+                const avgChange = totalChange / (stock.history.length - 1);
+                
+                for (let i = 1; i <= 5; i++) {
+                    const nextDate = new Date(lastDate);
+                    nextDate.setDate(lastDate.getDate() + i);
+                    const dateStr = nextDate.toISOString().split('T')[0];
+                    
+                    // 简单线性预测
+                    const predictedClose = lastClose * (1 + avgChange);
+                    const predictedOpen = lastOpen * (1 + avgChange * 0.5);
+                    const predictedHigh = Math.max(predictedOpen, predictedClose) * 1.02;
+                    const predictedLow = Math.min(predictedOpen, predictedClose) * 0.98;
+                    
+                    futureData.push([
+                        dateStr,
+                        predictedOpen,
+                        predictedClose,
+                        predictedLow,
+                        predictedHigh
+                    ]);
+                    
+                    // 更新最后价格用于下一天预测
+                    lastClose = predictedClose;
+                    lastOpen = predictedOpen;
+                    lastHigh = predictedHigh;
+                    lastLow = predictedLow;
+                }
+                
+                // 合并历史数据和预测数据
+                const allData = [...klineData, ...futureData];
+                const allDates = allData.map(item => item[0]);
+                
+                // 绘制K线图
                 priceChart.setOption({
                     title: {
-                        text: '价格走势图',
+                        text: '价格走势图（含预测）',
                         left: 'center'
                     },
                     tooltip: {
-                        trigger: 'axis'
+                        trigger: 'axis',
+                        axisPointer: {
+                            type: 'cross'
+                        }
+                    },
+                    legend: {
+                        data: ['K线', '预测']
                     },
                     xAxis: {
                         type: 'category',
-                        data: dates
+                        data: allDates,
+                        boundaryGap: false
                     },
                     yAxis: {
-                        type: 'value'
+                        type: 'value',
+                        scale: true
                     },
                     series: [{
-                        data: prices,
-                        type: 'line',
-                        smooth: true,
-                        lineStyle: {
-                            color: '#3498db'
+                        name: 'K线',
+                        type: 'candlestick',
+                        data: klineData,
+                        itemStyle: {
+                            color: '#ef232a',  // 阳线颜色
+                            color0: '#11c26d',  // 阴线颜色
+                            borderColor: '#ef232a',  // 阳线边框颜色
+                            borderColor0: '#11c26d'  // 阴线边框颜色
+                        }
+                    }, {
+                        name: '预测',
+                        type: 'candlestick',
+                        data: futureData,
+                        itemStyle: {
+                            color: '#ff9800',  // 预测阳线颜色
+                            color0: '#ff9800',  // 预测阴线颜色
+                            borderColor: '#ff9800',  // 预测阳线边框颜色
+                            borderColor0: '#ff9800'  // 预测阴线边框颜色
+                        },
+                        markLine: {
+                            symbol: 'none',
+                            label: {
+                                show: true
+                            },
+                            data: [{
+                                xAxis: klineData.length - 0.5,
+                                label: {
+                                    formatter: '预测开始'
+                                }
+                            }]
                         }
                     }]
                 });
                 
-                // 绘制成交量图
+                // 处理成交量数据
                 const volumes = stock.history.map(item => item.volume);
                 
+                // 生成未来5天的预测成交量（基于历史平均）
+                const avgVolume = volumes.reduce((sum, vol) => sum + vol, 0) / volumes.length;
+                const futureVolumes = [];
+                for (let i = 1; i <= 5; i++) {
+                    // 模拟成交量波动
+                    const predictedVolume = avgVolume * (1 + (Math.random() - 0.5) * 0.2);
+                    futureVolumes.push(predictedVolume);
+                }
+                
+                // 合并历史成交量和预测成交量
+                const allVolumes = [...volumes, ...futureVolumes];
+                
+                // 绘制成交量图
                 volumeChart.setOption({
                     title: {
-                        text: '成交量走势图',
+                        text: '成交量走势图（含预测）',
                         left: 'center'
                     },
                     tooltip: {
@@ -256,16 +353,25 @@ document.addEventListener('DOMContentLoaded', function() {
                     },
                     xAxis: {
                         type: 'category',
-                        data: dates
+                        data: allDates,
+                        boundaryGap: false
                     },
                     yAxis: {
                         type: 'value'
                     },
                     series: [{
+                        name: '成交量',
                         data: volumes,
                         type: 'bar',
                         itemStyle: {
                             color: '#27ae60'
+                        }
+                    }, {
+                        name: '预测成交量',
+                        data: Array(volumes.length).fill(null).concat(futureVolumes),
+                        type: 'bar',
+                        itemStyle: {
+                            color: '#ff9800'
                         }
                     }]
                 });
