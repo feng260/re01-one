@@ -459,6 +459,33 @@ def stock_detail():
     if not stock_code:
         return jsonify(None)
     
+    # 生成最近10天的日期
+    import datetime
+    today = datetime.datetime.now()
+    history = []
+    base_price = 1600.0
+    base_volume = 1000000
+    
+    for i in range(10):
+        date = today - datetime.timedelta(days=9 - i)
+        date_str = date.strftime('%Y-%m-%d')
+        
+        # 生成价格数据
+        open_price = base_price * (1 + (i * 0.01))
+        close_price = base_price * (1 + (i * 0.01) + 0.01)
+        high_price = close_price * 1.005
+        low_price = open_price * 0.995
+        volume = base_volume * (1 + i * 0.05)
+        
+        history.append({
+            "date": date_str,
+            "open": round(open_price, 2),
+            "close": round(close_price, 2),
+            "high": round(high_price, 2),
+            "low": round(low_price, 2),
+            "volume": int(volume)
+        })
+    
     # 直接返回模拟数据，包含history字段
     mock_stock_data = {
         'code': stock_code,
@@ -474,18 +501,7 @@ def stock_detail():
             'industry_gain': 18.5 if stock_code == 'sh600519' or stock_code == 'sz000858' else 10.2,
             'up_stocks_ratio': 0.85 if stock_code == 'sh600519' or stock_code == 'sz000858' else 0.72
         },
-        'history': [
-            {"date": "2024-01-01", "open": 1590.0, "close": 1600.0, "high": 1610.0, "low": 1580.0, "volume": 1000000},
-            {"date": "2024-01-02", "open": 1605.0, "close": 1620.0, "high": 1630.0, "low": 1595.0, "volume": 1100000},
-            {"date": "2024-01-03", "open": 1625.0, "close": 1650.0, "high": 1660.0, "low": 1620.0, "volume": 1150000},
-            {"date": "2024-01-04", "open": 1655.0, "close": 1680.0, "high": 1690.0, "low": 1650.0, "volume": 1200000},
-            {"date": "2024-01-05", "open": 1685.0, "close": 1700.0, "high": 1710.0, "low": 1680.0, "volume": 1250000},
-            {"date": "2024-01-08", "open": 1705.0, "close": 1720.0, "high": 1730.0, "low": 1700.0, "volume": 1300000},
-            {"date": "2024-01-09", "open": 1725.0, "close": 1750.0, "high": 1760.0, "low": 1720.0, "volume": 1350000},
-            {"date": "2024-01-10", "open": 1755.0, "close": 1780.0, "high": 1790.0, "low": 1750.0, "volume": 1400000},
-            {"date": "2024-01-11", "open": 1785.0, "close": 1800.0, "high": 1810.0, "low": 1780.0, "volume": 1450000},
-            {"date": "2024-01-12", "open": 1805.0, "close": 1850.0, "high": 1860.0, "low": 1800.0, "volume": 1500000}
-        ]
+        'history': history
     }
     
     return jsonify(mock_stock_data)
