@@ -231,30 +231,45 @@ document.addEventListener('DOMContentLoaded', function() {
                 `;
                 
                 try {
+                    console.log('开始处理股票数据');
+                    
+                    // 检查history数据
+                    console.log('history数据:', stock.history);
+                    console.log('history长度:', stock.history.length);
+                    
                     // 处理K线数据
+                    console.log('开始处理K线数据');
                     const dates = stock.history.map(item => item.date);
+                    console.log('dates:', dates);
+                    
                     const klineData = stock.history.map(item => [
                         item.open,
                         item.close,
                         item.low,
                         item.high
                     ]);
+                    console.log('klineData:', klineData);
                     
                     // 生成未来5天的预测数据（简单线性预测）
+                    console.log('开始生成预测数据');
                     const futureDates = [];
                     const futureData = [];
                     const lastDate = new Date(stock.history[stock.history.length - 1].date);
+                    console.log('lastDate:', lastDate);
+                    
                     let lastClose = stock.history[stock.history.length - 1].close;
                     let lastOpen = stock.history[stock.history.length - 1].open;
                     let lastHigh = stock.history[stock.history.length - 1].high;
                     let lastLow = stock.history[stock.history.length - 1].low;
                     
                     // 计算平均涨幅
+                    console.log('开始计算平均涨幅');
                     let totalChange = 0;
                     for (let i = 1; i < stock.history.length; i++) {
                         totalChange += (stock.history[i].close - stock.history[i-1].close) / stock.history[i-1].close;
                     }
                     const avgChange = totalChange / (stock.history.length - 1);
+                    console.log('avgChange:', avgChange);
                     
                     for (let i = 1; i <= 5; i++) {
                         const nextDate = new Date(lastDate);
@@ -281,11 +296,15 @@ document.addEventListener('DOMContentLoaded', function() {
                         lastHigh = predictedHigh;
                         lastLow = predictedLow;
                     }
+                    console.log('futureDates:', futureDates);
+                    console.log('futureData:', futureData);
                     
                     // 合并历史日期和预测日期
                     const allDates = [...dates, ...futureDates];
+                    console.log('allDates:', allDates);
                     
                     // 绘制K线图
+                    console.log('开始绘制K线图');
                     priceChart.setOption({
                         title: {
                             text: '价格走势图（含预测）',
@@ -311,41 +330,19 @@ document.addEventListener('DOMContentLoaded', function() {
                         },
                         series: [{
                             name: 'K线',
-                            type: 'candlestick',
-                            data: klineData,
+                            type: 'line',
+                            data: stock.history.map(item => item.close),
                             itemStyle: {
-                                color: '#ef232a',  // 阳线颜色
-                                color0: '#11c26d',  // 阴线颜色
-                                borderColor: '#ef232a',  // 阳线边框颜色
-                                borderColor0: '#11c26d'  // 阴线边框颜色
-                            }
-                        }, {
-                            name: '预测',
-                            type: 'candlestick',
-                            data: Array(klineData.length).fill(null).concat(futureData),
-                            itemStyle: {
-                                color: '#ff9800',  // 预测阳线颜色
-                                color0: '#ff9800',  // 预测阴线颜色
-                                borderColor: '#ff9800',  // 预测阳线边框颜色
-                                borderColor0: '#ff9800'  // 预测阴线边框颜色
-                            },
-                            markLine: {
-                                symbol: 'none',
-                                label: {
-                                    show: true
-                                },
-                                data: [{
-                                    xAxis: klineData.length - 0.5,
-                                    label: {
-                                        formatter: '预测开始'
-                                    }
-                                }]
+                                color: '#3498db'
                             }
                         }]
                     });
+                    console.log('K线图绘制完成');
                     
                     // 处理成交量数据
+                    console.log('开始处理成交量数据');
                     const volumes = stock.history.map(item => item.volume);
+                    console.log('volumes:', volumes);
                     
                     // 生成未来5天的预测成交量（基于历史平均）
                     const avgVolume = volumes.reduce((sum, vol) => sum + vol, 0) / volumes.length;
@@ -355,11 +352,14 @@ document.addEventListener('DOMContentLoaded', function() {
                         const predictedVolume = avgVolume * (1 + (Math.random() - 0.5) * 0.2);
                         futureVolumes.push(predictedVolume);
                     }
+                    console.log('futureVolumes:', futureVolumes);
                     
                     // 合并历史成交量和预测成交量
                     const allVolumes = [...volumes, ...futureVolumes];
+                    console.log('allVolumes:', allVolumes);
                     
                     // 绘制成交量图
+                    console.log('开始绘制成交量图');
                     volumeChart.setOption({
                         title: {
                             text: '成交量走势图（含预测）',
@@ -392,6 +392,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             }
                         }]
                     });
+                    console.log('成交量图绘制完成');
                     
                     // 调整图表大小，确保图表能够正确显示
                     setTimeout(function() {
@@ -400,7 +401,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     }, 100);
                 } catch (error) {
                     console.error('处理股票数据时出错:', error);
-                    stockInfo.innerHTML = '<div style="text-align: center; padding: 40px; color: red;">处理股票数据时出错</div>';
+                    console.error('错误堆栈:', error.stack);
+                    stockInfo.innerHTML = `<div style="text-align: center; padding: 40px; color: red;">处理股票数据时出错: ${error.message}</div>`;
                 }
             })
             .catch(error => {
