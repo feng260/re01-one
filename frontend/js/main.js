@@ -1,6 +1,8 @@
 document.addEventListener('DOMContentLoaded', function() {
     const filterBtn = document.getElementById('filter-btn');
     const stockCodesInput = document.getElementById('stock-codes');
+    const filterTypeSelect = document.getElementById('filter-type');
+    const customStocksDiv = document.getElementById('custom-stocks');
     const loading = document.getElementById('loading');
     const resultsTable = document.getElementById('results-table').querySelector('tbody');
     const noResults = document.getElementById('no-results');
@@ -10,6 +12,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const stockInfo = document.getElementById('stock-info');
     const priceChart = echarts.init(document.getElementById('price-chart'));
     const volumeChart = echarts.init(document.getElementById('volume-chart'));
+    
+    // 监听筛选范围选择变化
+    filterTypeSelect.addEventListener('change', function() {
+        if (this.value === 'all') {
+            customStocksDiv.style.display = 'none';
+        } else {
+            customStocksDiv.style.display = 'block';
+        }
+    });
     
     // 股票数据（模拟数据）
     const mockStockData = {
@@ -95,11 +106,19 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 筛选按钮点击事件
     filterBtn.addEventListener('click', function() {
-        const stockCodes = stockCodesInput.value.trim().split(',').map(code => code.trim());
+        let stockCodes = [];
+        const filterType = filterTypeSelect.value;
         
-        if (stockCodes.length === 0 || (stockCodes.length === 1 && stockCodes[0] === '')) {
-            alert('请输入股票代码');
-            return;
+        if (filterType === 'custom') {
+            stockCodes = stockCodesInput.value.trim().split(',').map(code => code.trim());
+            
+            if (stockCodes.length === 0 || (stockCodes.length === 1 && stockCodes[0] === '')) {
+                alert('请输入股票代码');
+                return;
+            }
+        } else if (filterType === 'all') {
+            // 全部股票模式，发送特殊标记
+            stockCodes = ['all'];
         }
         
         // 显示加载状态

@@ -12,8 +12,45 @@ class DataCollector:
     def __init__(self):
         self.base_url = {
             'sina': 'http://hq.sinajs.cn/list=',
-            'eastmoney': 'http://push2.eastmoney.com/api/qt/stock/get'
+            'eastmoney': 'http://push2.eastmoney.com/api/qt/stock/get',
+            'sina_stock_list': 'http://vip.stock.finance.sina.com.cn/q/go.php/vIR_CirculateStock/page/1.phtml'
         }
+    
+    def get_all_stock_codes(self):
+        """获取所有A股股票代码"""
+        try:
+            # 使用新浪财经的股票列表页面
+            import requests
+            from bs4 import BeautifulSoup
+            
+            stock_codes = []
+            # 循环获取所有页面的股票代码
+            for page in range(1, 10):  # 假设最多10页
+                url = f"http://vip.stock.finance.sina.com.cn/q/go.php/vIR_CirculateStock/page/{page}.phtml"
+                response = requests.get(url)
+                soup = BeautifulSoup(response.text, 'html.parser')
+                
+                # 查找股票代码表格
+                table = soup.find('table', class_='list_table')
+                if not table:
+                    break
+                
+                # 提取股票代码
+                rows = table.find_all('tr')[1:]  # 跳过表头
+                for row in rows:
+                    cols = row.find_all('td')
+                    if len(cols) >= 2:
+                        code = cols[1].text.strip()
+                        if code.startswith('6'):
+                            stock_codes.append(f'sh{code}')  # 上海股票
+                        elif code.startswith('0') or code.startswith('3'):
+                            stock_codes.append(f'sz{code}')  # 深圳股票
+            
+            return stock_codes
+        except Exception as e:
+            print(f"获取股票列表失败: {e}")
+            # 返回一些常见的股票代码作为备选
+            return ['sh600519', 'sz000858', 'sh601318', 'sh600036', 'sz000333', 'sh601888', 'sh601398', 'sh600276', 'sz000001', 'sh600000']
     
     def get_stock_basic(self, stock_code):
         """获取股票基本信息"""
@@ -376,6 +413,12 @@ def index():
 def filter_stocks():
     data = request.json
     stock_codes = data.get('stock_codes', [])
+    
+    # 处理全部股票模式
+    if len(stock_codes) == 1 and stock_codes[0] == 'all':
+        collector = DataCollector()
+        stock_codes = collector.get_all_stock_codes()
+    
     processor = DataProcessor()
     results = processor.filter_stocks(stock_codes)
     return jsonify(results)

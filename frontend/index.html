@@ -18,6 +18,13 @@
             <div class="control-panel">
                 <h2>筛选参数设置</h2>
                 <div class="form-group">
+                    <label for="filter-type">筛选范围</label>
+                    <select id="filter-type">
+                        <option value="custom">自定义股票</option>
+                        <option value="all">全部股票</option>
+                    </select>
+                </div>
+                <div class="form-group" id="custom-stocks">
                     <label for="stock-codes">股票代码（多个代码用逗号分隔）</label>
                     <textarea id="stock-codes" rows="4" placeholder="例如：sh600000,sz000001,sh600519"></textarea>
                 </div>
