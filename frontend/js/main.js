@@ -240,14 +240,25 @@ document.addEventListener('DOMContentLoaded', function() {
                     console.log('开始处理股票数据');
                     
                     // 检查history数据
+                    console.log('完整的stock对象:', stock);
                     console.log('history数据:', stock.history);
                     console.log('history长度:', stock.history.length);
                     
                     // 确保history数据不为空且包含数据
-                    if (!stock.history || stock.history.length === 0) {
-                        console.error('历史数据为空');
+                    if (!stock.history || !Array.isArray(stock.history) || stock.history.length === 0) {
+                        console.error('历史数据为空或格式错误');
                         stockInfo.innerHTML = '<div style="text-align: center; padding: 40px; color: red;">历史数据为空，无法绘制走势图</div>';
                         return;
+                    }
+                    
+                    // 检查每一条history数据是否有效
+                    for (let i = 0; i < stock.history.length; i++) {
+                        const item = stock.history[i];
+                        if (!item || typeof item.date === 'undefined') {
+                            console.error('无效的历史数据项:', i, item);
+                            stockInfo.innerHTML = '<div style="text-align: center; padding: 40px; color: red;">历史数据格式错误</div>';
+                            return;
+                        }
                     }
                     
                     // 处理K线数据

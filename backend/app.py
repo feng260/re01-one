@@ -32,52 +32,36 @@ class DataCollector:
         """获取股票基本信息"""
         try:
             if use_real_data:
-                # 使用真实数据（新浪财经网页解析）
+                # 使用真实数据（新浪财经API）
+                # 禁用代理设置，确保直接访问目标服务器
                 import re
-                # 构建URL
-                if stock_code.startswith('sh'):
-                    url = f"http://finance.sina.com.cn/realstock/company/{stock_code}/nc.shtml"
-                elif stock_code.startswith('sz'):
-                    url = f"http://finance.sina.com.cn/realstock/company/{stock_code}/nc.shtml"
-                else:
-                    # 代码格式错误，返回模拟数据
-                    return self._get_mock_stock_basic(stock_code)
+                session = requests.Session()
+                session.trust_env = False  # 禁用环境变量中的代理设置
                 
-                response = requests.get(url, timeout=5)
-                response.encoding = 'utf-8'
+                url = self.base_url['sina'] + stock_code
+                response = session.get(url, timeout=5)
                 data = response.text
-                
-                # 提取股票名称
-                name_match = re.search(r'<h1 class="name">(.*?)</h1>', data)
-                if not name_match:
-                    # 提取失败，返回模拟数据
+                if '=' in data:
+                    data = data.split('=')[1].strip('"').split(',')
+                    if len(data) > 10:  # 确保有足够的数据
+                        return {
+                            'name': data[0],
+                            'open': float(data[1]),
+                            'prev_close': float(data[2]),
+                            'current': float(data[3]),
+                            'high': float(data[4]),
+                            'low': float(data[5]),
+                            'volume': int(data[8]),
+                            'amount': float(data[9])
+                        }
+                    else:
+                        # 数据不完整，返回模拟数据
+                        print(f"新浪数据不完整: {data}")
+                        return self._get_mock_stock_basic(stock_code)
+                else:
+                    # 数据格式不对，返回模拟数据
+                    print(f"新浪数据格式不对: {data}")
                     return self._get_mock_stock_basic(stock_code)
-                name = name_match.group(1).strip()
-                
-                # 提取价格数据
-                price_match = re.search(r'<strong id="_now" class=".*?">(.*?)</strong>', data)
-                if not price_match:
-                    return self._get_mock_stock_basic(stock_code)
-                current = float(price_match.group(1).strip())
-                
-                # 提取其他数据
-                open_price = current * 0.99  # 模拟开盘价
-                prev_close = current * 0.98  # 模拟昨收价
-                high = current * 1.01  # 模拟最高价
-                low = current * 0.99  # 模拟最低价
-                volume = 1000000  # 模拟成交量
-                amount = current * volume  # 模拟成交额
-                
-                return {
-                    'name': name,
-                    'open': open_price,
-                    'prev_close': prev_close,
-                    'current': current,
-                    'high': high,
-                    'low': low,
-                    'volume': volume,
-                    'amount': amount
-                }
             else:
                 # 使用模拟数据
                 return self._get_mock_stock_basic(stock_code)
@@ -149,12 +133,21 @@ class DataCollector:
                     # 代码格式错误，返回模拟数据
                     return self._generate_mock_history(stock_code, days)
                 
+                # 禁用代理设置，确保直接访问目标服务器
+                session = requests.Session()
+                session.trust_env = False  # 禁用环境变量中的代理设置
+                
                 # 计算日期范围
                 end_date = datetime.datetime.now().strftime('%Y%m%d')
                 start_date = (datetime.datetime.now() - datetime.timedelta(days=days*2)).strftime('%Y%m%d')
                 
                 url = f"http://quotes.money.163.com/service/chddata.html?code={code}&start={start_date}&end={end_date}&fields=TCLOSE;HIGH;LOW;TOPEN;LCLOSE;CHG;PCHG;TURNOVER;VOTURNOVER;VATURNOVER"
-                response = requests.get(url, timeout=5)
+                print(f"请求历史数据: {url}")
+                
+                response = session.get(url, timeout=10)
+                print(f"响应状态码: {response.status_code}")
+                print(f"响应内容前100字符: {response.text[:100]}")
+                
                 data = response.text
                 lines = data.split('\n')[1:]
                 history = []
@@ -176,6 +169,8 @@ class DataCollector:
                             except (ValueError, IndexError):
                                 continue
                 
+                print(f"获取到的历史数据条数: {len(history)}")
+                
                 # 如果获取到的数据为空，返回模拟数据
                 if not history:
                     print(f"获取真实历史数据为空，返回模拟数据")
@@ -186,7 +181,9 @@ class DataCollector:
                 # 使用模拟数据
                 return self._generate_mock_history(stock_code, days)
         except Exception as e:
+            import traceback
             print(f"获取股票历史数据失败: {e}")
+            print(f"错误堆栈: {traceback.format_exc()}")
             # 失败时返回模拟数据
             return self._generate_mock_history(stock_code, days)
     
