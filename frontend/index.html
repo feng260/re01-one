@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>股票量化分析工具</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>股票量化分析工具</h1>
+            <p>筛选近期涨势最好的股票</p>
+        </header>
+        
+        <div class="content">
+            <div class="control-panel">
+                <h2>筛选参数设置</h2>
+                <div class="form-group">
+                    <label for="stock-codes">股票代码（多个代码用逗号分隔）</label>
+                    <textarea id="stock-codes" rows="4" placeholder="例如：sh600000,sz000001,sh600519"></textarea>
+                </div>
+                <button id="filter-btn">开始筛选</button>
+            </div>
+            
+            <div class="results-panel">
+                <h2>筛选结果</h2>
+                <div id="loading" style="display: none;">正在筛选中...</div>
+                <table id="results-table">
+                    <thead>
+                        <tr>
+                            <th>股票代码</th>
+                            <th>股票名称</th>
+                            <th>短期涨幅(%)</th>
+                            <th>当前价格</th>
+                            <th>成交量</th>
+                            <th>详细分析</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- 筛选结果将通过JavaScript动态添加 -->
+                    </tbody>
+                </table>
+                <div id="no-results" style="display: none;">没有符合条件的股票</div>
+            </div>
+            
+            <div class="analysis-panel" style="display: none;">
+                <h2>详细分析</h2>
+                <div id="stock-info"></div>
+                <div class="charts-container">
+                    <div id="price-chart" class="chart"></div>
+                    <div id="volume-chart" class="chart"></div>
+                </div>
+                <div class="risk-warning">
+                    <h3>风险提示</h3>
+                    <ul>
+                        <li>短期涨幅过大风险：短期涨幅过大的股票可能面临回调风险</li>
+                        <li>成交量异常风险：成交量突然放大可能是短期资金炒作的结果</li>
+                        <li>行业轮动风险：行业热度可能随时变化</li>
+                        <li>市场系统性风险：大盘波动可能影响个股表现</li>
+                        <li>信息不对称风险：公开数据可能存在延迟或不准确</li>
+                    </ul>
+                </div>
+                <button id="back-btn">返回结果列表</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="js/main.js"></script>
+</body>
+</html>
