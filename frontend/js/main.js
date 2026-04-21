@@ -185,7 +185,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function showAnalysis(stockCode) {
         console.log('开始获取股票详情:', stockCode);
         // 显示加载状态
-        stockInfo.innerHTML = '<div style="text-align: center; padding: 40px;">正在加载分析数据...</div>';
+        stockInfo.innerHTML = '<div style="text-align: center; padding: 40px;">正在加载分析数据...<br><small>数据来源: ' + (dataSource === 'real' ? '真实数据（可能需要切换到模拟数据）' : '模拟数据') + '</small></div>';
         
         // 显示分析面板，隐藏结果面板
         resultsPanel.style.display = 'none';
