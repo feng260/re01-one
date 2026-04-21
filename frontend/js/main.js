@@ -215,8 +215,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 `;
                 
                 // 处理K线数据
+                const dates = stock.history.map(item => item.date);
                 const klineData = stock.history.map(item => [
-                    item.date,
                     item.open,
                     item.close,
                     item.low,
@@ -224,6 +224,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 ]);
                 
                 // 生成未来5天的预测数据（简单线性预测）
+                const futureDates = [];
                 const futureData = [];
                 const lastDate = new Date(stock.history[stock.history.length - 1].date);
                 let lastClose = stock.history[stock.history.length - 1].close;
@@ -242,6 +243,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const nextDate = new Date(lastDate);
                     nextDate.setDate(lastDate.getDate() + i);
                     const dateStr = nextDate.toISOString().split('T')[0];
+                    futureDates.push(dateStr);
                     
                     // 简单线性预测
                     const predictedClose = lastClose * (1 + avgChange);
@@ -250,7 +252,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     const predictedLow = Math.min(predictedOpen, predictedClose) * 0.98;
                     
                     futureData.push([
-                        dateStr,
                         predictedOpen,
                         predictedClose,
                         predictedLow,
@@ -264,9 +265,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     lastLow = predictedLow;
                 }
                 
-                // 合并历史数据和预测数据
-                const allData = [...klineData, ...futureData];
-                const allDates = allData.map(item => item[0]);
+                // 合并历史日期和预测日期
+                const allDates = [...dates, ...futureDates];
                 
                 // 绘制K线图
                 priceChart.setOption({
@@ -305,7 +305,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     }, {
                         name: '预测',
                         type: 'candlestick',
-                        data: futureData,
+                        data: Array(klineData.length).fill(null).concat(futureData),
                         itemStyle: {
                             color: '#ff9800',  // 预测阳线颜色
                             color0: '#ff9800',  // 预测阴线颜色
