@@ -43,9 +43,38 @@ class DataCollector:
                     quotation = self.easyquotation.use('sina')
                     data = quotation.real(stock_code)
                     print(f"easyquotation返回的数据: {data}")
-                    if stock_code in data:
+                    
+                    # 处理股票代码格式问题
+                    target_code = stock_code
+                    if stock_code.startswith('sh') or stock_code.startswith('sz'):
+                        # 尝试使用不带前缀的代码
+                        target_code = stock_code[2:]
+                        print(f"尝试使用不带前缀的代码: {target_code}")
+                    
+                    # 检查所有可能的代码格式
+                    found = False
+                    stock_data = None
+                    
+                    # 尝试不带前缀的代码
+                    if target_code in data:
+                        stock_data = data[target_code]
+                        found = True
+                        print(f"找到股票数据: {stock_data}")
+                    # 尝试原始代码
+                    elif stock_code in data:
                         stock_data = data[stock_code]
-                        print(f"股票数据: {stock_data}")
+                        found = True
+                        print(f"找到股票数据: {stock_data}")
+                    # 尝试所有键，看是否有匹配的
+                    else:
+                        for key in data:
+                            if key.endswith(target_code):
+                                stock_data = data[key]
+                                found = True
+                                print(f"找到股票数据: {stock_data}")
+                                break
+                    
+                    if found and stock_data:
                         return {
                             'name': stock_data.get('name', '未知'),
                             'open': stock_data.get('open', 0.0),
