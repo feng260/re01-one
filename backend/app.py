@@ -155,7 +155,8 @@ class DataCollector:
                 elif stock_code.startswith('sz'):
                     code = '1' + stock_code[2:]
                 else:
-                    return []
+                    # 代码格式错误，返回模拟数据
+                    return self._generate_mock_history(stock_code, days)
                 
                 # 计算日期范围
                 end_date = datetime.datetime.now().strftime('%Y%m%d')
@@ -183,60 +184,47 @@ class DataCollector:
                                 })
                             except (ValueError, IndexError):
                                 continue
+                
+                # 如果获取到的数据为空，返回模拟数据
+                if not history:
+                    print(f"获取真实历史数据为空，返回模拟数据")
+                    return self._generate_mock_history(stock_code, days)
+                
                 return history[::-1]  # 反转顺序，最新的在后面
             else:
                 # 使用模拟数据
-                today = datetime.datetime.now()
-                history = []
-                base_price = 1600.0 if stock_code == 'sh600519' else 150.0 if stock_code == 'sz000858' else 44.5
-                base_volume = 1000000 if stock_code == 'sh600519' else 2000000 if stock_code == 'sz000858' else 4500000
-                
-                for i in range(days):
-                    date = today - datetime.timedelta(days=days - 1 - i)
-                    date_str = date.strftime('%Y-%m-%d')
-                    # 生成价格数据
-                    open_price = base_price * (1 + (i * 0.02))
-                    close_price = base_price * (1 + (i * 0.02) + 0.01)
-                    high_price = close_price * 1.005
-                    low_price = open_price * 0.995
-                    volume = base_volume * (1 + i * 0.05)
-                    
-                    history.append({
-                        "date": date_str,
-                        "open": round(open_price, 2),
-                        "close": round(close_price, 2),
-                        "high": round(high_price, 2),
-                        "low": round(low_price, 2),
-                        "volume": int(volume)
-                    })
-                return history
+                return self._generate_mock_history(stock_code, days)
         except Exception as e:
             print(f"获取股票历史数据失败: {e}")
             # 失败时返回模拟数据
-            today = datetime.datetime.now()
-            history = []
-            base_price = 1600.0 if stock_code == 'sh600519' else 150.0 if stock_code == 'sz000858' else 44.5
-            base_volume = 1000000 if stock_code == 'sh600519' else 2000000 if stock_code == 'sz000858' else 4500000
+            return self._generate_mock_history(stock_code, days)
+    
+    def _generate_mock_history(self, stock_code, days=20):
+        """生成模拟历史数据"""
+        today = datetime.datetime.now()
+        history = []
+        base_price = 1600.0 if stock_code == 'sh600519' else 150.0 if stock_code == 'sz000858' else 44.5
+        base_volume = 1000000 if stock_code == 'sh600519' else 2000000 if stock_code == 'sz000858' else 4500000
+        
+        for i in range(days):
+            date = today - datetime.timedelta(days=days - 1 - i)
+            date_str = date.strftime('%Y-%m-%d')
+            # 生成价格数据
+            open_price = base_price * (1 + (i * 0.02))
+            close_price = base_price * (1 + (i * 0.02) + 0.01)
+            high_price = close_price * 1.005
+            low_price = open_price * 0.995
+            volume = base_volume * (1 + i * 0.05)
             
-            for i in range(days):
-                date = today - datetime.timedelta(days=days - 1 - i)
-                date_str = date.strftime('%Y-%m-%d')
-                # 生成价格数据
-                open_price = base_price * (1 + (i * 0.02))
-                close_price = base_price * (1 + (i * 0.02) + 0.01)
-                high_price = close_price * 1.005
-                low_price = open_price * 0.995
-                volume = base_volume * (1 + i * 0.05)
-                
-                history.append({
-                    "date": date_str,
-                    "open": round(open_price, 2),
-                    "close": round(close_price, 2),
-                    "high": round(high_price, 2),
-                    "low": round(low_price, 2),
-                    "volume": int(volume)
-                })
-            return history
+            history.append({
+                "date": date_str,
+                "open": round(open_price, 2),
+                "close": round(close_price, 2),
+                "high": round(high_price, 2),
+                "low": round(low_price, 2),
+                "volume": int(volume)
+            })
+        return history
     
     def get_industry_data(self, industry_code):
         """获取行业数据"""
