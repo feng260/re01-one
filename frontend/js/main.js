@@ -202,6 +202,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     <p><strong>资金净流入率：</strong>${stock.fund_flow.net_inflow_rate}%</p>
                     <p><strong>行业涨幅：</strong>${stock.industry_heat.industry_gain}%</p>
                     <p><strong>行业上涨股票占比：</strong>${(stock.industry_heat.up_stocks_ratio * 100).toFixed(1)}%</p>
+                    
+                    <h4>分析依据</h4>
+                    <ul>
+                        <li><strong>短期涨幅：</strong>涨幅${stock.short_term_gain}%，大于10%的筛选标准</li>
+                        <li><strong>趋势强度：</strong>5日均线大于10日均线，最近5个交易日中有4个交易日收盘价在5日均线上方，5日均线斜率为正</li>
+                        <li><strong>量价配合：</strong>最近5日平均成交量比前5日平均成交量放大至少30%，价格上涨日的平均成交量大于价格下跌日的平均成交量</li>
+                        <li><strong>资金流向：</strong>最近3个交易日资金净流入${(stock.fund_flow.net_inflow / 10000).toFixed(2)}万元，资金净流入率${stock.fund_flow.net_inflow_rate}%，大于5%的筛选标准</li>
+                        <li><strong>行业热度：</strong>行业指数涨幅${stock.industry_heat.industry_gain}%，大于8%的筛选标准；行业内上涨股票数量占比${(stock.industry_heat.up_stocks_ratio * 100).toFixed(1)}%，大于60%的筛选标准</li>
+                        <li><strong>风险控制：</strong>波动率小于同期沪深300指数波动率的1.5倍，最大回撤小于15%，夏普比率大于0.5</li>
+                    </ul>
                 `;
                 
                 // 绘制价格走势图
