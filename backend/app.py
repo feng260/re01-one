@@ -16,34 +16,57 @@ class DataCollector:
             'eastmoney': 'http://push2.eastmoney.com/api/qt/stock/get',
             'sina_stock_list': 'http://vip.stock.finance.sina.com.cn/q/go.php/vIR_CirculateStock/page/1.phtml'
         }
+        # 尝试导入easyquotation
+        self.easyquotation_available = False
+        try:
+            import easyquotation
+            self.easyquotation = easyquotation
+            self.easyquotation_available = True
+            print("easyquotation库加载成功")
+        except ImportError:
+            print("easyquotation库未安装，将使用模拟数据")
     
     def get_all_stock_codes(self):
         """获取所有A股股票代码"""
         try:
-            # 直接返回一些常见的股票代码作为示例
-            # 实际项目中可以通过API或数据库获取完整的股票列表
             return ['sh600519', 'sz000858', 'sh601318', 'sh600036', 'sz000333', 'sh601888', 'sh601398', 'sh600276', 'sz000001', 'sh600000', 'sh600028', 'sh600585', 'sh601166', 'sz000651', 'sz000977']
         except Exception as e:
             print(f"获取股票列表失败: {e}")
-            # 返回一些常见的股票代码作为备选
             return ['sh600519', 'sz000858', 'sh601318', 'sh600036', 'sz000333', 'sh601888', 'sh601398', 'sh600276', 'sz000001', 'sh600000']
     
     def get_stock_basic(self, stock_code, use_real_data=False):
         """获取股票基本信息"""
         try:
-            if use_real_data:
-                # 使用真实数据（新浪财经API）
-                # 禁用代理设置，确保直接访问目标服务器
+            if use_real_data and self.easyquotation_available:
+                try:
+                    quotation = self.easyquotation.use('sina')
+                    data = quotation.real(stock_code)
+                    if stock_code in data:
+                        stock_data = data[stock_code]
+                        return {
+                            'name': stock_data.get('name', '未知'),
+                            'open': stock_data.get('open', 0.0),
+                            'prev_close': stock_data.get('close', 0.0),
+                            'current': stock_data.get('now', 0.0),
+                            'high': stock_data.get('high', 0.0),
+                            'low': stock_data.get('low', 0.0),
+                            'volume': stock_data.get('turnover', 0),
+                            'amount': stock_data.get('volume', 0.0)
+                        }
+                except Exception as e:
+                    print(f"easyquotation获取数据失败: {e}")
+                    return self._get_mock_stock_basic(stock_code)
+            elif use_real_data:
                 import re
                 session = requests.Session()
-                session.trust_env = False  # 禁用环境变量中的代理设置
+                session.trust_env = False
                 
                 url = self.base_url['sina'] + stock_code
                 response = session.get(url, timeout=5)
                 data = response.text
                 if '=' in data:
                     data = data.split('=')[1].strip('"').split(',')
-                    if len(data) > 10:  # 确保有足够的数据
+                    if len(data) > 10:
                         return {
                             'name': data[0],
                             'open': float(data[1]),
@@ -54,22 +77,12 @@ class DataCollector:
                             'volume': int(data[8]),
                             'amount': float(data[9])
                         }
-                    else:
-                        # 数据不完整，返回模拟数据
-                        print(f"新浪数据不完整: {data}")
-                        return self._get_mock_stock_basic(stock_code)
-                else:
-                    # 数据格式不对，返回模拟数据
-                    print(f"新浪数据格式不对: {data}")
-                    return self._get_mock_stock_basic(stock_code)
+                return self._get_mock_stock_basic(stock_code)
             else:
-                # 使用模拟数据
                 return self._get_mock_stock_basic(stock_code)
         except Exception as e:
             print(f"获取股票基本信息失败: {e}")
-            # 失败时返回模拟数据
             return self._get_mock_stock_basic(stock_code)
-        return None
     
     def _get_mock_stock_basic(self, stock_code):
         """获取模拟股票基本信息"""
@@ -107,7 +120,6 @@ class DataCollector:
                 'amount': 241000000.00
             }
         else:
-            # 对于其他股票代码，返回默认数据
             return {
                 'name': '未知股票',
                 'open': 10.00,
@@ -122,22 +134,48 @@ class DataCollector:
     def get_stock_history(self, stock_code, days=20, use_real_data=False):
         """获取股票历史数据"""
         try:
+            if use_real_data and self.easyquotation_available:
+                try:
+                    quotation = self.easyquotation.use("daykline")
+                    code = stock_code[2:] if stock_code.startswith(('sh', 'sz')) else stock_code
+                    data = quotation.real([code])
+                    if code in data and len(data[code]) > 0:
+                        kline_data = data[code][:days]
+                        history = []
+                        for item in kline_data:
+                            if len(item) >= 6:
+                                date_str = item[0]
+                                open_price = float(item[1])
+                                close_price = float(item[2])
+                                high_price = float(item[3])
+                                low_price = float(item[4])
+                                volume = int(float(item[5]))
+                                history.append({
+                                    'date': date_str,
+                                    'open': open_price,
+                                    'close': close_price,
+                                    'high': high_price,
+                                    'low': low_price,
+                                    'volume': volume
+                                })
+                        history = history[::-1]
+                        if len(history) > 0:
+                            print(f"成功获取{len(history)}条历史数据")
+                            return history
+                except Exception as e:
+                    print(f"easyquotation获取历史数据失败: {e}")
+                    
             if use_real_data:
-                # 使用真实数据（网易财经API）
-                # 股票代码处理：上海股票前加0，深圳股票前加1
                 if stock_code.startswith('sh'):
                     code = '0' + stock_code[2:]
                 elif stock_code.startswith('sz'):
                     code = '1' + stock_code[2:]
                 else:
-                    # 代码格式错误，返回模拟数据
                     return self._generate_mock_history(stock_code, days)
                 
-                # 禁用代理设置，确保直接访问目标服务器
                 session = requests.Session()
-                session.trust_env = False  # 禁用环境变量中的代理设置
+                session.trust_env = False
                 
-                # 计算日期范围
                 end_date = datetime.datetime.now().strftime('%Y%m%d')
                 start_date = (datetime.datetime.now() - datetime.timedelta(days=days*2)).strftime('%Y%m%d')
                 
@@ -145,8 +183,6 @@ class DataCollector:
                 print(f"请求历史数据: {url}")
                 
                 response = session.get(url, timeout=10)
-                print(f"响应状态码: {response.status_code}")
-                print(f"响应内容前100字符: {response.text[:100]}")
                 
                 data = response.text
                 lines = data.split('\n')[1:]
@@ -169,22 +205,16 @@ class DataCollector:
                             except (ValueError, IndexError):
                                 continue
                 
-                print(f"获取到的历史数据条数: {len(history)}")
-                
-                # 如果获取到的数据为空，返回模拟数据
-                if not history:
-                    print(f"获取真实历史数据为空，返回模拟数据")
+                if len(history) > 0:
+                    return history[::-1]
+                else:
                     return self._generate_mock_history(stock_code, days)
-                
-                return history[::-1]  # 反转顺序，最新的在后面
             else:
-                # 使用模拟数据
                 return self._generate_mock_history(stock_code, days)
         except Exception as e:
             import traceback
             print(f"获取股票历史数据失败: {e}")
             print(f"错误堆栈: {traceback.format_exc()}")
-            # 失败时返回模拟数据
             return self._generate_mock_history(stock_code, days)
     
     def _generate_mock_history(self, stock_code, days=20):
@@ -197,7 +227,6 @@ class DataCollector:
         for i in range(days):
             date = today - datetime.timedelta(days=days - 1 - i)
             date_str = date.strftime('%Y-%m-%d')
-            # 生成价格数据
             open_price = base_price * (1 + (i * 0.02))
             close_price = base_price * (1 + (i * 0.02) + 0.01)
             high_price = close_price * 1.005
@@ -205,19 +234,18 @@ class DataCollector:
             volume = base_volume * (1 + i * 0.05)
             
             history.append({
-                "date": date_str,
-                "open": round(open_price, 2),
-                "close": round(close_price, 2),
-                "high": round(high_price, 2),
-                "low": round(low_price, 2),
-                "volume": int(volume)
+                'date': date_str,
+                'open': round(open_price, 2),
+                'close': round(close_price, 2),
+                'high': round(high_price, 2),
+                'low': round(low_price, 2),
+                'volume': int(volume)
             })
         return history
     
     def get_industry_data(self, industry_code):
         """获取行业数据"""
         try:
-            # 使用东方财富的行业数据API
             url = self.base_url['eastmoney']
             params = {
                 'secid': industry_code,
@@ -228,8 +256,6 @@ class DataCollector:
             }
             response = requests.get(url, params=params)
             data = response.text
-            # 解析JSON数据
-            # 注意：东方财富的API返回的是JSONP格式，需要处理
             import re
             json_data = re.search(r'jQuery\d+_\d+\((.*)\)', data)
             if json_data:
@@ -237,14 +263,14 @@ class DataCollector:
                 data = json.loads(json_data.group(1))
                 if data.get('data'):
                     return {
-                        'industry_gain': data['data'].get('f43', 0),  # 涨跌幅
-                        'current_price': data['data'].get('f44', 0),  # 当前价格
-                        'volume': data['data'].get('f46', 0),  # 成交量
-                        'amount': data['data'].get('f47', 0),  # 成交额
-                        'open': data['data'].get('f48', 0),  # 开盘价
-                        'high': data['data'].get('f51', 0),  # 最高价
-                        'low': data['data'].get('f52', 0),  # 最低价
-                        'prev_close': data['data'].get('f57', 0)  # 昨收价
+                        'industry_gain': data['data'].get('f43', 0),
+                        'current_price': data['data'].get('f44', 0),
+                        'volume': data['data'].get('f46', 0),
+                        'amount': data['data'].get('f47', 0),
+                        'open': data['data'].get('f48', 0),
+                        'high': data['data'].get('f51', 0),
+                        'low': data['data'].get('f52', 0),
+                        'prev_close': data['data'].get('f57', 0)
                     }
         except Exception as e:
             print(f"获取行业数据失败: {e}")
@@ -268,18 +294,15 @@ class DataProcessor:
         if len(history) < 10:
             return False
         
-        # 计算5日均线和10日均线
         closes = [item['close'] for item in history]
         ma5 = np.mean(closes[-5:])
         ma10 = np.mean(closes[-10:])
         
-        # 检查是否站在5日均线上方
         above_ma5_count = 0
         for item in history[-5:]:
             if item['close'] > ma5:
                 above_ma5_count += 1
         
-        # 计算5日均线斜率
         ma5_values = []
         for i in range(len(closes) - 4):
             ma5_values.append(np.mean(closes[i:i+5]))
@@ -295,18 +318,14 @@ class DataProcessor:
         if len(history) < 10:
             return False
         
-        # 计算最近5日平均成交量
         recent_volumes = [item['volume'] for item in history[-5:]]
         recent_avg_volume = np.mean(recent_volumes)
         
-        # 计算前5日平均成交量
         previous_volumes = [item['volume'] for item in history[-10:-5]]
         previous_avg_volume = np.mean(previous_volumes)
         
-        # 计算成交量放大倍数
         volume_increase = (recent_avg_volume - previous_avg_volume) / previous_avg_volume
         
-        # 计算上涨日和下跌日的平均成交量
         up_days_volumes = []
         down_days_volumes = []
         for i in range(1, len(history)):
@@ -326,7 +345,6 @@ class DataProcessor:
     def calculate_fund_flow(self, stock_code):
         """计算资金流向"""
         try:
-            # 直接返回模拟数据，避免API请求
             if stock_code == 'sh600519':
                 return {
                     'net_inflow': 150000000,
@@ -343,7 +361,6 @@ class DataProcessor:
                     'net_inflow_rate': 6.8
                 }
             else:
-                # 对于其他股票代码，返回默认数据
                 return {
                     'net_inflow': 10000000,
                     'net_inflow_rate': 5.5
@@ -351,7 +368,6 @@ class DataProcessor:
         except Exception as e:
             print(f"获取资金流向失败: {e}")
         
-        # 失败时返回模拟数据
         return {
             'net_inflow': 10000000,
             'net_inflow_rate': 8.5
@@ -360,17 +376,11 @@ class DataProcessor:
     def calculate_industry_heat(self, industry_code):
         """计算行业热度"""
         try:
-            # 使用东方财富的行业数据API
             collector = DataCollector()
             industry_data = collector.get_industry_data(industry_code)
             
             if industry_data:
-                # 计算行业涨幅
                 industry_gain = industry_data.get('industry_gain', 0)
-                
-                # 计算行业内上涨股票数量占比
-                # 这里简化处理，实际应该获取行业内所有股票的数据并计算
-                # 暂时返回模拟数据
                 up_stocks_ratio = 0.75
                 
                 return {
@@ -380,7 +390,6 @@ class DataProcessor:
         except Exception as e:
             print(f"计算行业热度失败: {e}")
         
-        # 失败时返回模拟数据
         return {
             'industry_gain': 12.5,
             'up_stocks_ratio': 0.75
@@ -391,14 +400,12 @@ class DataProcessor:
         if len(history) < 10:
             return False
         
-        # 计算波动率
         closes = [item['close'] for item in history]
         returns = []
         for i in range(1, len(closes)):
             returns.append((closes[i] - closes[i-1]) / closes[i-1])
         volatility = np.std(returns)
         
-        # 计算最大回撤
         max_price = closes[0]
         max_drawdown = 0
         for price in closes:
@@ -408,15 +415,13 @@ class DataProcessor:
             if drawdown > max_drawdown:
                 max_drawdown = drawdown
         
-        # 计算夏普比率（假设无风险利率为2%）
-        avg_return = np.mean(returns) * 252  # 年化收益率
+        avg_return = np.mean(returns) * 252
         risk_free_rate = 0.02
         if volatility > 0:
             sharpe_ratio = (avg_return - risk_free_rate) / (volatility * np.sqrt(252))
         else:
             sharpe_ratio = 0
         
-        # 假设沪深300指数波动率为0.02
         sh300_volatility = 0.02
         
         return volatility < sh300_volatility * 1.5 and max_drawdown < 0.15 and sharpe_ratio > 0.5
@@ -427,22 +432,17 @@ class DataProcessor:
         results = []
         
         for stock_code in stock_codes:
-            # 获取股票历史数据
             history = collector.get_stock_history(stock_code, use_real_data=use_real_data)
             if not history:
                 continue
             
-            # 第一层筛选：短期涨幅
             short_term_gain = self.calculate_short_term_gain(history)
             if short_term_gain <= 10:
                 continue
             
-            # 获取股票基本信息
             basic_info = collector.get_stock_basic(stock_code, use_real_data=use_real_data)
             if basic_info:
-                # 获取资金流向
                 fund_flow = self.calculate_fund_flow(stock_code)
-                # 获取行业热度
                 industry_heat = self.calculate_industry_heat('industry_code')
                 
                 results.append({
@@ -455,7 +455,6 @@ class DataProcessor:
                     'industry_heat': industry_heat
                 })
         
-        # 按短期涨幅排序
         results.sort(key=lambda x: x['short_term_gain'], reverse=True)
         return results
 
@@ -473,10 +472,8 @@ def filter_stocks():
     
     print(f"接收到的股票代码: {stock_codes}, 数据来源: {data_source}")
     
-    # 处理全部股票模式
     if len(stock_codes) == 1 and stock_codes[0] == 'all':
         print("进入全部股票模式")
-        # 直接返回模拟数据
         mock_results = [
             {
                 'code': 'sh600519',
@@ -524,10 +521,10 @@ def filter_stocks():
                 }
             }
         ]
-        print(f"返回模拟数据，共 {len(mock_results)} 条")
+        print(f"返回模拟数据，共{len(mock_results)}条")
         return jsonify(mock_results)
     
-    print(f"开始筛选股票，共 {len(stock_codes)} 只股票")
+    print(f"开始筛选股票，共{len(stock_codes)}只股票")
     processor = DataProcessor()
     results = processor.filter_stocks(stock_codes, use_real_data)
     print(f"筛选结果数量: {len(results)}")
@@ -549,16 +546,13 @@ def stock_detail():
     collector = DataCollector()
     processor = DataProcessor()
     
-    # 获取股票基本信息
     basic_info = collector.get_stock_basic(stock_code, use_real_data=use_real_data)
     print(f"获取到的基本信息: {basic_info}")
     
-    # 获取股票历史数据
     history = collector.get_stock_history(stock_code, days=10, use_real_data=use_real_data)
     print(f"获取到的历史数据长度: {len(history)}")
     
     if not basic_info or not history:
-        # 失败时返回模拟数据
         print("获取真实数据失败，返回模拟数据")
         today = datetime.datetime.now()
         history = []
@@ -569,7 +563,6 @@ def stock_detail():
             date = today - datetime.timedelta(days=9 - i)
             date_str = date.strftime('%Y-%m-%d')
             
-            # 生成价格数据
             open_price = base_price * (1 + (i * 0.02))
             close_price = base_price * (1 + (i * 0.02) + 0.01)
             high_price = close_price * 1.005
@@ -585,7 +578,6 @@ def stock_detail():
                 "volume": int(volume)
             })
         
-        # 直接返回模拟数据，包含history字段
         mock_stock_data = {
             'code': stock_code,
             'name': '贵州茅台' if stock_code == 'sh600519' else '五粮液' if stock_code == 'sz000858' else '中国平安',
@@ -597,24 +589,24 @@ def stock_detail():
                 'net_inflow_rate': 12.5 if stock_code == 'sh600519' else 10.2 if stock_code == 'sz000858' else 6.8
             },
             'industry_heat': {
-                'industry_gain': 18.5 if stock_code == 'sh600519' or stock_code == 'sz000858' else 10.2,
-                'up_stocks_ratio': 0.85 if stock_code == 'sh600519' or stock_code == 'sz000858' else 0.72
+                'industry_gain': 18.5,
+                'up_stocks_ratio': 0.85
             },
-            'history': history
+            'history': history,
+            'trend_strength': True,
+            'volume_price_match': True,
+            'risk_control': True,
+            'data_source': 'mock'
         }
-        
         return jsonify(mock_stock_data)
     
-    # 计算短期涨幅
     short_term_gain = processor.calculate_short_term_gain(history)
-    
-    # 获取资金流向
+    trend_strength = processor.calculate_trend_strength(history)
+    volume_price_match = processor.calculate_volume_price_match(history)
+    risk_control = processor.calculate_risk_control(history)
     fund_flow = processor.calculate_fund_flow(stock_code)
-    
-    # 获取行业热度
     industry_heat = processor.calculate_industry_heat('industry_code')
     
-    # 返回真实数据
     stock_data = {
         'code': stock_code,
         'name': basic_info['name'],
@@ -624,11 +616,13 @@ def stock_detail():
         'fund_flow': fund_flow,
         'industry_heat': industry_heat,
         'history': history,
-        'data_source': 'real' if use_real_data else 'mock'
+        'trend_strength': trend_strength,
+        'volume_price_match': volume_price_match,
+        'risk_control': risk_control,
+        'data_source': data_source
     }
     
-    print(f"返回真实数据: {stock_data}")
     return jsonify(stock_data)
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5000, debug=True)
