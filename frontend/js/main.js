@@ -278,6 +278,12 @@ document.addEventListener('DOMContentLoaded', function() {
         // 显示分析面板，隐藏结果面板
         resultsPanel.style.display = 'none';
         analysisPanel.style.display = 'block';
+        
+        // 调整图表大小，确保图表能够正确显示
+        setTimeout(function() {
+            priceChart.resize();
+            volumeChart.resize();
+        }, 100);
     }
     
     // 响应窗口大小变化
