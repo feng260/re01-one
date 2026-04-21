@@ -126,13 +126,16 @@ document.addEventListener('DOMContentLoaded', function() {
         resultsTable.innerHTML = '';
         noResults.style.display = 'none';
         
+        // 获取数据来源
+        const dataSource = document.getElementById('data-source').value;
+        
         // 调用后端API
         fetch('/api/filter_stocks', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ stock_codes: stockCodes })
+            body: JSON.stringify({ stock_codes: stockCodes, data_source: dataSource })
         })
         .then(response => response.json())
         .then(data => {
@@ -188,8 +191,11 @@ document.addEventListener('DOMContentLoaded', function() {
         resultsPanel.style.display = 'none';
         analysisPanel.style.display = 'block';
         
+        // 获取数据来源
+        const dataSource = document.getElementById('data-source').value;
+        
         // 调用后端API获取股票详细信息
-        fetch(`/api/stock_detail?code=${stockCode}`)
+        fetch(`/api/stock_detail?code=${stockCode}&data_source=${dataSource}`)
             .then(response => {
                 console.log('响应状态:', response.status);
                 return response.json();

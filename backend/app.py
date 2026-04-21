@@ -28,10 +28,76 @@ class DataCollector:
             # 返回一些常见的股票代码作为备选
             return ['sh600519', 'sz000858', 'sh601318', 'sh600036', 'sz000333', 'sh601888', 'sh601398', 'sh600276', 'sz000001', 'sh600000']
     
-    def get_stock_basic(self, stock_code):
+    def get_stock_basic(self, stock_code, use_real_data=False):
         """获取股票基本信息"""
         try:
-            # 直接返回模拟数据，避免API请求
+            if use_real_data:
+                # 使用真实数据（Sina Finance API）
+                url = self.base_url['sina'] + stock_code
+                response = requests.get(url, timeout=3)
+                data = response.text
+                if '=' in data:
+                    data = data.split('=')[1].strip('"').split(',')
+                    return {
+                        'name': data[0],
+                        'open': float(data[1]),
+                        'prev_close': float(data[2]),
+                        'current': float(data[3]),
+                        'high': float(data[4]),
+                        'low': float(data[5]),
+                        'volume': int(data[8]),
+                        'amount': float(data[9])
+                    }
+            else:
+                # 使用模拟数据
+                if stock_code == 'sh600519':
+                    return {
+                        'name': '贵州茅台',
+                        'open': 1800.00,
+                        'prev_close': 1820.00,
+                        'current': 1850.00,
+                        'high': 1860.00,
+                        'low': 1790.00,
+                        'volume': 1250000,
+                        'amount': 2312500000.00
+                    }
+                elif stock_code == 'sz000858':
+                    return {
+                        'name': '五粮液',
+                        'open': 165.00,
+                        'prev_close': 166.50,
+                        'current': 168.50,
+                        'high': 169.00,
+                        'low': 164.00,
+                        'volume': 2500000,
+                        'amount': 421250000.00
+                    }
+                elif stock_code == 'sh601318':
+                    return {
+                        'name': '中国平安',
+                        'open': 47.50,
+                        'prev_close': 47.80,
+                        'current': 48.20,
+                        'high': 48.50,
+                        'low': 47.20,
+                        'volume': 5000000,
+                        'amount': 241000000.00
+                    }
+                else:
+                    # 对于其他股票代码，返回默认数据
+                    return {
+                        'name': '未知股票',
+                        'open': 10.00,
+                        'prev_close': 10.00,
+                        'current': 10.50,
+                        'high': 10.80,
+                        'low': 9.90,
+                        'volume': 1000000,
+                        'amount': 10500000.00
+                    }
+        except Exception as e:
+            print(f"获取股票基本信息失败: {e}")
+            # 失败时返回模拟数据
             if stock_code == 'sh600519':
                 return {
                     'name': '贵州茅台',
@@ -66,7 +132,6 @@ class DataCollector:
                     'amount': 241000000.00
                 }
             else:
-                # 对于其他股票代码，返回默认数据
                 return {
                     'name': '未知股票',
                     'open': 10.00,
@@ -77,14 +142,77 @@ class DataCollector:
                     'volume': 1000000,
                     'amount': 10500000.00
                 }
-        except Exception as e:
-            print(f"获取股票基本信息失败: {e}")
         return None
     
-    def get_stock_history(self, stock_code, days=20):
+    def get_stock_history(self, stock_code, days=20, use_real_data=False):
         """获取股票历史数据"""
         try:
-            # 直接返回模拟数据，避免API请求超时
+            if use_real_data:
+                # 使用真实数据（网易财经API）
+                # 股票代码处理：上海股票前加0，深圳股票前加1
+                if stock_code.startswith('sh'):
+                    code = '0' + stock_code[2:]
+                elif stock_code.startswith('sz'):
+                    code = '1' + stock_code[2:]
+                else:
+                    return []
+                
+                # 计算日期范围
+                end_date = datetime.datetime.now().strftime('%Y%m%d')
+                start_date = (datetime.datetime.now() - datetime.timedelta(days=days*2)).strftime('%Y%m%d')
+                
+                url = f"http://quotes.money.163.com/service/chddata.html?code={code}&start={start_date}&end={end_date}&fields=TCLOSE;HIGH;LOW;TOPEN;LCLOSE;CHG;PCHG;TURNOVER;VOTURNOVER;VATURNOVER"
+                response = requests.get(url, timeout=5)
+                data = response.text
+                lines = data.split('\n')[1:]
+                history = []
+                for line in lines[:days]:
+                    if line:
+                        parts = line.split(',')
+                        if len(parts) >= 12:
+                            try:
+                                history.append({
+                                    'date': parts[0],
+                                    'close': float(parts[3]),
+                                    'high': float(parts[4]),
+                                    'low': float(parts[5]),
+                                    'open': float(parts[6]),
+                                    'prev_close': float(parts[7]),
+                                    'volume': int(parts[10]),
+                                    'amount': float(parts[11])
+                                })
+                            except (ValueError, IndexError):
+                                continue
+                return history[::-1]  # 反转顺序，最新的在后面
+            else:
+                # 使用模拟数据
+                today = datetime.datetime.now()
+                history = []
+                base_price = 1600.0 if stock_code == 'sh600519' else 150.0 if stock_code == 'sz000858' else 44.5
+                base_volume = 1000000 if stock_code == 'sh600519' else 2000000 if stock_code == 'sz000858' else 4500000
+                
+                for i in range(days):
+                    date = today - datetime.timedelta(days=days - 1 - i)
+                    date_str = date.strftime('%Y-%m-%d')
+                    # 生成价格数据
+                    open_price = base_price * (1 + (i * 0.02))
+                    close_price = base_price * (1 + (i * 0.02) + 0.01)
+                    high_price = close_price * 1.005
+                    low_price = open_price * 0.995
+                    volume = base_volume * (1 + i * 0.05)
+                    
+                    history.append({
+                        "date": date_str,
+                        "open": round(open_price, 2),
+                        "close": round(close_price, 2),
+                        "high": round(high_price, 2),
+                        "low": round(low_price, 2),
+                        "volume": int(volume)
+                    })
+                return history
+        except Exception as e:
+            print(f"获取股票历史数据失败: {e}")
+            # 失败时返回模拟数据
             today = datetime.datetime.now()
             history = []
             base_price = 1600.0 if stock_code == 'sh600519' else 150.0 if stock_code == 'sz000858' else 44.5
@@ -109,9 +237,6 @@ class DataCollector:
                     "volume": int(volume)
                 })
             return history
-        except Exception as e:
-            print(f"获取股票历史数据失败: {e}")
-        return []
     
     def get_industry_data(self, industry_code):
         """获取行业数据"""
@@ -320,14 +445,14 @@ class DataProcessor:
         
         return volatility < sh300_volatility * 1.5 and max_drawdown < 0.15 and sharpe_ratio > 0.5
     
-    def filter_stocks(self, stock_codes):
+    def filter_stocks(self, stock_codes, use_real_data=False):
         """筛选股票"""
         collector = DataCollector()
         results = []
         
         for stock_code in stock_codes:
             # 获取股票历史数据
-            history = collector.get_stock_history(stock_code)
+            history = collector.get_stock_history(stock_code, use_real_data=use_real_data)
             if not history:
                 continue
             
@@ -337,7 +462,7 @@ class DataProcessor:
                 continue
             
             # 获取股票基本信息
-            basic_info = collector.get_stock_basic(stock_code)
+            basic_info = collector.get_stock_basic(stock_code, use_real_data=use_real_data)
             if basic_info:
                 # 获取资金流向
                 fund_flow = self.calculate_fund_flow(stock_code)
@@ -367,8 +492,10 @@ def index():
 def filter_stocks():
     data = request.json
     stock_codes = data.get('stock_codes', [])
+    data_source = data.get('data_source', 'mock')
+    use_real_data = (data_source == 'real')
     
-    print(f"接收到的股票代码: {stock_codes}")
+    print(f"接收到的股票代码: {stock_codes}, 数据来源: {data_source}")
     
     # 处理全部股票模式
     if len(stock_codes) == 1 and stock_codes[0] == 'all':
@@ -426,7 +553,7 @@ def filter_stocks():
     
     print(f"开始筛选股票，共 {len(stock_codes)} 只股票")
     processor = DataProcessor()
-    results = processor.filter_stocks(stock_codes)
+    results = processor.filter_stocks(stock_codes, use_real_data)
     print(f"筛选结果数量: {len(results)}")
     if results:
         print(f"前5个筛选结果: {[(r['code'], r['name'], r['short_term_gain']) for r in results[:5]]}")
@@ -435,55 +562,90 @@ def filter_stocks():
 @app.route('/api/stock_detail')
 def stock_detail():
     stock_code = request.args.get('code')
+    data_source = request.args.get('data_source', 'mock')
+    use_real_data = (data_source == 'real')
+    
     if not stock_code:
         return jsonify(None)
     
-    # 生成最近10天的日期
-    import datetime
-    today = datetime.datetime.now()
-    history = []
-    base_price = 1600.0
-    base_volume = 1000000
+    collector = DataCollector()
+    processor = DataProcessor()
     
-    for i in range(10):
-        date = today - datetime.timedelta(days=9 - i)
-        date_str = date.strftime('%Y-%m-%d')
-        
-        # 生成价格数据
-        open_price = base_price * (1 + (i * 0.01))
-        close_price = base_price * (1 + (i * 0.01) + 0.01)
-        high_price = close_price * 1.005
-        low_price = open_price * 0.995
-        volume = base_volume * (1 + i * 0.05)
-        
-        history.append({
-            "date": date_str,
-            "open": round(open_price, 2),
-            "close": round(close_price, 2),
-            "high": round(high_price, 2),
-            "low": round(low_price, 2),
-            "volume": int(volume)
-        })
+    # 获取股票历史数据
+    history = collector.get_stock_history(stock_code, days=10, use_real_data=use_real_data)
     
-    # 直接返回模拟数据，包含history字段
-    mock_stock_data = {
+    # 获取股票基本信息
+    basic_info = collector.get_stock_basic(stock_code, use_real_data=use_real_data)
+    
+    if not basic_info:
+        # 失败时返回模拟数据
+        today = datetime.datetime.now()
+        history = []
+        base_price = 1600.0 if stock_code == 'sh600519' else 150.0 if stock_code == 'sz000858' else 44.5
+        base_volume = 1000000 if stock_code == 'sh600519' else 2000000 if stock_code == 'sz000858' else 4500000
+        
+        for i in range(10):
+            date = today - datetime.timedelta(days=9 - i)
+            date_str = date.strftime('%Y-%m-%d')
+            
+            # 生成价格数据
+            open_price = base_price * (1 + (i * 0.02))
+            close_price = base_price * (1 + (i * 0.02) + 0.01)
+            high_price = close_price * 1.005
+            low_price = open_price * 0.995
+            volume = base_volume * (1 + i * 0.05)
+            
+            history.append({
+                "date": date_str,
+                "open": round(open_price, 2),
+                "close": round(close_price, 2),
+                "high": round(high_price, 2),
+                "low": round(low_price, 2),
+                "volume": int(volume)
+            })
+        
+        # 直接返回模拟数据，包含history字段
+        mock_stock_data = {
+            'code': stock_code,
+            'name': '贵州茅台' if stock_code == 'sh600519' else '五粮液' if stock_code == 'sz000858' else '中国平安',
+            'short_term_gain': 15.2 if stock_code == 'sh600519' else 12.8 if stock_code == 'sz000858' else 8.5,
+            'current_price': 1850.00 if stock_code == 'sh600519' else 168.50 if stock_code == 'sz000858' else 48.20,
+            'volume': 1250000 if stock_code == 'sh600519' else 2500000 if stock_code == 'sz000858' else 5000000,
+            'fund_flow': {
+                'net_inflow': 150000000 if stock_code == 'sh600519' else 80000000 if stock_code == 'sz000858' else 50000000,
+                'net_inflow_rate': 12.5 if stock_code == 'sh600519' else 10.2 if stock_code == 'sz000858' else 6.8
+            },
+            'industry_heat': {
+                'industry_gain': 18.5 if stock_code == 'sh600519' or stock_code == 'sz000858' else 10.2,
+                'up_stocks_ratio': 0.85 if stock_code == 'sh600519' or stock_code == 'sz000858' else 0.72
+            },
+            'history': history
+        }
+        
+        return jsonify(mock_stock_data)
+    
+    # 计算短期涨幅
+    short_term_gain = processor.calculate_short_term_gain(history)
+    
+    # 获取资金流向
+    fund_flow = processor.calculate_fund_flow(stock_code)
+    
+    # 获取行业热度
+    industry_heat = processor.calculate_industry_heat('industry_code')
+    
+    # 返回真实数据
+    stock_data = {
         'code': stock_code,
-        'name': '贵州茅台' if stock_code == 'sh600519' else '五粮液' if stock_code == 'sz000858' else '中国平安',
-        'short_term_gain': 15.2 if stock_code == 'sh600519' else 12.8 if stock_code == 'sz000858' else 8.5,
-        'current_price': 1850.00 if stock_code == 'sh600519' else 168.50 if stock_code == 'sz000858' else 48.20,
-        'volume': 1250000 if stock_code == 'sh600519' else 2500000 if stock_code == 'sz000858' else 5000000,
-        'fund_flow': {
-            'net_inflow': 150000000 if stock_code == 'sh600519' else 80000000 if stock_code == 'sz000858' else 50000000,
-            'net_inflow_rate': 12.5 if stock_code == 'sh600519' else 10.2 if stock_code == 'sz000858' else 6.8
-        },
-        'industry_heat': {
-            'industry_gain': 18.5 if stock_code == 'sh600519' or stock_code == 'sz000858' else 10.2,
-            'up_stocks_ratio': 0.85 if stock_code == 'sh600519' or stock_code == 'sz000858' else 0.72
-        },
+        'name': basic_info['name'],
+        'short_term_gain': round(short_term_gain, 2),
+        'current_price': basic_info['current'],
+        'volume': basic_info['volume'],
+        'fund_flow': fund_flow,
+        'industry_heat': industry_heat,
         'history': history
     }
     
-    return jsonify(mock_stock_data)
+    return jsonify(stock_data)
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
