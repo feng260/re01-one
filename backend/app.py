@@ -49,8 +49,13 @@ class DataCollector:
             if use_real_data and self.easyquotation_available:
                 try:
                     print(f"使用easyquotation获取{stock_code}的基本信息")
-                    quotation = self.easyquotation.use('sina')
-                    data = quotation.real(stock_code)
+                    import timeout_decorator
+                    @timeout_decorator.timeout(3)
+                    def get_real_data_with_timeout(code):
+                        quotation = self.easyquotation.use('sina')
+                        return quotation.real(code)
+                    
+                    data = get_real_data_with_timeout(stock_code)
                     print(f"easyquotation返回的数据: {data}")
                     
                     # 处理股票代码格式问题
@@ -99,30 +104,32 @@ class DataCollector:
                         return self._get_mock_stock_basic(stock_code)
                 except Exception as e:
                     print(f"easyquotation获取数据失败: {e}")
-                    import traceback
-                    print(f"错误堆栈: {traceback.format_exc()}")
                     return self._get_mock_stock_basic(stock_code)
             elif use_real_data:
                 import re
                 session = requests.Session()
                 session.trust_env = False
+                session.timeout = 3
                 
                 url = self.base_url['sina'] + stock_code
-                response = session.get(url, timeout=5)
-                data = response.text
-                if '=' in data:
-                    data = data.split('=')[1].strip('"').split(',')
-                    if len(data) > 10:
-                        return {
-                            'name': data[0],
-                            'open': float(data[1]),
-                            'prev_close': float(data[2]),
-                            'current': float(data[3]),
-                            'high': float(data[4]),
-                            'low': float(data[5]),
-                            'volume': int(data[8]),
-                            'amount': float(data[9])
-                        }
+                try:
+                    response = session.get(url)
+                    data = response.text
+                    if '=' in data:
+                        data = data.split('=')[1].strip('"').split(',')
+                        if len(data) > 10:
+                            return {
+                                'name': data[0],
+                                'open': float(data[1]),
+                                'prev_close': float(data[2]),
+                                'current': float(data[3]),
+                                'high': float(data[4]),
+                                'low': float(data[5]),
+                                'volume': int(data[8]),
+                                'amount': float(data[9])
+                            }
+                except Exception as e:
+                    print(f"网络请求失败: {e}")
                 return self._get_mock_stock_basic(stock_code)
             else:
                 return self._get_mock_stock_basic(stock_code)
@@ -183,7 +190,13 @@ class DataCollector:
             if use_real_data and self.ashare_available:
                 try:
                     print(f"使用Ashare获取{stock_code}的历史数据")
-                    df = self.get_price(stock_code, frequency='1d', count=days)
+                    # 设置超时
+                    import timeout_decorator
+                    @timeout_decorator.timeout(5)
+                    def get_price_with_timeout(code, freq, cnt):
+                        return self.get_price(code, frequency=freq, count=cnt)
+                    
+                    df = get_price_with_timeout(stock_code, '1d', days)
                     if not df.empty:
                         history = []
                         for index, row in df.iterrows():
@@ -200,8 +213,6 @@ class DataCollector:
                             return history
                 except Exception as e:
                     print(f"Ashare获取历史数据失败: {e}")
-                    import traceback
-                    print(f"错误堆栈: {traceback.format_exc()}")
             
             if use_real_data and self.easyquotation_available:
                 try:
@@ -244,6 +255,7 @@ class DataCollector:
                 
                 session = requests.Session()
                 session.trust_env = False
+                session.timeout = 3
                 
                 end_date = datetime.datetime.now().strftime('%Y%m%d')
                 start_date = (datetime.datetime.now() - datetime.timedelta(days=days*2)).strftime('%Y%m%d')
@@ -251,39 +263,39 @@ class DataCollector:
                 url = f"http://quotes.money.163.com/service/chddata.html?code={code}&start={start_date}&end={end_date}&fields=TCLOSE;HIGH;LOW;TOPEN;LCLOSE;CHG;PCHG;TURNOVER;VOTURNOVER;VATURNOVER"
                 print(f"请求历史数据: {url}")
                 
-                response = session.get(url, timeout=10)
-                
-                data = response.text
-                lines = data.split('\n')[1:]
-                history = []
-                for line in lines[:days]:
-                    if line:
-                        parts = line.split(',')
-                        if len(parts) >= 12:
-                            try:
-                                history.append({
-                                    'date': parts[0],
-                                    'close': float(parts[3]),
-                                    'high': float(parts[4]),
-                                    'low': float(parts[5]),
-                                    'open': float(parts[6]),
-                                    'prev_close': float(parts[7]),
-                                    'volume': int(parts[10]),
-                                    'amount': float(parts[11])
-                                })
-                            except (ValueError, IndexError):
-                                continue
-                
-                if len(history) > 0:
-                    return history[::-1]
-                else:
-                    return self._generate_mock_history(stock_code, days)
-            else:
-                return self._generate_mock_history(stock_code, days)
+                try:
+                    response = session.get(url)
+                    
+                    data = response.text
+                    lines = data.split('\n')[1:]
+                    history = []
+                    for line in lines[:days]:
+                        if line:
+                            parts = line.split(',')
+                            if len(parts) >= 12:
+                                try:
+                                    history.append({
+                                        'date': parts[0],
+                                        'close': float(parts[3]),
+                                        'high': float(parts[4]),
+                                        'low': float(parts[5]),
+                                        'open': float(parts[6]),
+                                        'prev_close': float(parts[7]),
+                                        'volume': int(parts[10]),
+                                        'amount': float(parts[11])
+                                    })
+                                except (ValueError, IndexError):
+                                    continue
+                    
+                    if len(history) > 0:
+                        return history[::-1]
+                except Exception as e:
+                    print(f"网络请求失败: {e}")
+            
+            # 所有获取真实数据的方法都失败，返回模拟数据
+            return self._generate_mock_history(stock_code, days)
         except Exception as e:
-            import traceback
             print(f"获取股票历史数据失败: {e}")
-            print(f"错误堆栈: {traceback.format_exc()}")
             return self._generate_mock_history(stock_code, days)
     
     def _generate_mock_history(self, stock_code, days=20):
