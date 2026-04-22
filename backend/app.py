@@ -25,6 +25,15 @@ class DataCollector:
             print("easyquotation库加载成功")
         except ImportError:
             print("easyquotation库未安装，将使用模拟数据")
+        # 尝试导入Ashare
+        self.ashare_available = False
+        try:
+            from Ashare import get_price
+            self.get_price = get_price
+            self.ashare_available = True
+            print("Ashare库加载成功")
+        except ImportError:
+            print("Ashare库未安装，将使用模拟历史数据")
     
     def get_all_stock_codes(self):
         """获取所有A股股票代码"""
