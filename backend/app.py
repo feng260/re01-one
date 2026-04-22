@@ -180,6 +180,29 @@ class DataCollector:
     def get_stock_history(self, stock_code, days=20, use_real_data=False):
         """获取股票历史数据"""
         try:
+            if use_real_data and self.ashare_available:
+                try:
+                    print(f"使用Ashare获取{stock_code}的历史数据")
+                    df = self.get_price(stock_code, frequency='1d', count=days)
+                    if not df.empty:
+                        history = []
+                        for index, row in df.iterrows():
+                            history.append({
+                                'date': index.strftime('%Y-%m-%d'),
+                                'open': float(row['open']),
+                                'close': float(row['close']),
+                                'high': float(row['high']),
+                                'low': float(row['low']),
+                                'volume': int(float(row['volume']))
+                            })
+                        if len(history) > 0:
+                            print(f"成功获取{len(history)}条历史数据")
+                            return history
+                except Exception as e:
+                    print(f"Ashare获取历史数据失败: {e}")
+                    import traceback
+                    print(f"错误堆栈: {traceback.format_exc()}")
+            
             if use_real_data and self.easyquotation_available:
                 try:
                     quotation = self.easyquotation.use("daykline")
